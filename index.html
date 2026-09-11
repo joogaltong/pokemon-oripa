@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>포켓몬 오리파</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f1220;--bg2:#171b2e;--panel:#1e2338;--line:#2c3350;--txt:#eef0f8;--mut:#9aa3c0;
+  --acc:#ffcb05;--acc2:#3b6cff;
+  --sar:#ff3d8a;--sr:#ffb020;--ar:#3fb8ff;--c:#8b93b0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 50% -10%,#28306a 0%,var(--bg) 60%);color:var(--txt);font-family:'Noto Sans KR',system-ui,sans-serif;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:0}
+header{position:sticky;top:0;z-index:20;background:rgba(15,18,32,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hwrap{max-width:1100px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-weight:900;font-size:20px;letter-spacing:-.5px}
+.logo span{color:var(--acc)}
+.tabs{display:flex;gap:4px;margin-left:auto}
+.tab{background:transparent;color:var(--mut);padding:8px 14px;border-radius:10px;font-weight:700;font-size:14px}
+.tab.on{background:var(--panel);color:var(--txt)}
+.wallet{display:flex;align-items:center;gap:8px;background:var(--panel);padding:6px 12px;border-radius:10px;border:1px solid var(--line)}
+.wallet b{color:var(--acc);font-size:16px}
+.wallet button{background:var(--acc2);color:#fff;padding:5px 10px;border-radius:8px;font-weight:700;font-size:12px}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+.view{display:none}.view.on{display:block}
+h2{font-size:17px;margin:6px 0 12px;display:flex;align-items:center;gap:8px}
+h2 small{color:var(--mut);font-weight:400;font-size:12px}
+.note{color:var(--mut);font-size:12px;margin-bottom:12px}
+
+/* 팩 선택 */
+.packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-bottom:18px}
+.pack{background:linear-gradient(160deg,var(--panel),#161a2c);border:2px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;transition:.15s;position:relative;overflow:hidden}
+.pack:hover{transform:translateY(-2px)}
+.pack.on{border-color:var(--acc);box-shadow:0 0 0 3px rgba(255,203,5,.2)}
+.pack .tag{position:absolute;top:10px;right:10px;font-size:11px;padding:3px 8px;border-radius:999px;font-weight:700}
+.pack h3{font-size:16px;margin-bottom:4px}
+.pack .price{font-size:22px;font-weight:900;color:var(--acc)}
+.pack .price small{font-size:12px;color:var(--mut);font-weight:400}
+.pack .odds{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.chip{font-size:11px;padding:3px 8px;border-radius:999px;font-weight:700;color:#000}
+.chip.SAR{background:var(--sar);color:#fff}.chip.SR{background:var(--sr)}.chip.AR{background:var(--ar)}.chip.C{background:var(--c)}
+.pack .left{margin-top:8px;font-size:12px;color:var(--mut)}
+.bar{height:6px;background:#0c0e1a;border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+
+/* 당첨 현황 & 컨트롤 */
+.board{display:flex;gap:10px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.board .st{display:flex;align-items:center;gap:6px;font-size:13px}
+.board .st b{font-size:15px}
+.board .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:10px 16px;border-radius:10px;font-weight:800;font-size:14px;color:#000;background:var(--acc);transition:.12s}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sec{background:var(--bg2);color:var(--txt);border:1px solid var(--line)}
+.btn.danger{background:#ff4d4d;color:#fff}
+
+/* 슬롯 그리드 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.slot{aspect-ratio:63/88;border-radius:8px;position:relative;cursor:pointer;transition:.15s;overflow:hidden;
+  background:radial-gradient(circle at 50% 50%,#fff 0 9%,#222 9% 12%,#e33 12% 45%,#fff 45% 48%,#222 48% 52%,#fff 52% 100%);}
+.slot::after{content:attr(data-n);position:absolute;inset:auto 0 0 0;background:rgba(0,0,0,.65);color:#fff;font-size:11px;font-weight:700;text-align:center;padding:2px 0}
+.slot:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 8px 16px rgba(0,0,0,.4)}
+.slot.open{cursor:default;background:#11142a;border:1px solid var(--line)}
+.slot.open:hover{transform:none;box-shadow:none}
+.slot.open img{width:100%;height:100%;object-fit:contain;padding:4px;opacity:.9}
+.slot.open.SAR{box-shadow:inset 0 0 0 2px var(--sar)}
+.slot.open.SR{box-shadow:inset 0 0 0 2px var(--sr)}
+.slot.open.AR{box-shadow:inset 0 0 0 2px var(--ar)}
+.slot.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translate(0)}20%{transform:translate(-3px,1px) rotate(-2deg)}40%{transform:translate(3px,-1px) rotate(2deg)}60%{transform:translate(-2px,1px)}80%{transform:translate(2px,-1px)}}
+
+/* 카드 */
+.card{width:250px;aspect-ratio:63/88;perspective:1200px;position:relative;cursor:pointer;user-select:none}
+.card-inner{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.5)}
+.face.back{background:#1e3ea8;border:6px solid #2a4fd0;display:flex;align-items:center;justify-content:center}
+.face.back::before{content:"";width:60%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 50%,#fff 0 16%,#222 16% 20%,#e33 20% 100%);box-shadow:0 0 0 6px #222,0 0 40px rgba(0,0,0,.4)}
+.face.back::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent 0 12px,rgba(255,255,255,.04) 12px 24px)}
+.face.front{transform:rotateY(180deg);background:linear-gradient(160deg,var(--tc) 0%,color-mix(in srgb,var(--tc) 55%,#000) 100%);border:8px solid #f4e6a0;padding:10px;display:flex;flex-direction:column;color:#111}
+.card.SAR .face.front{border-color:#fff}
+.card.SR .face.front{border-color:#ffe08a}
+.card.C .face.front{border-color:#f4e6a0}
+.ct{display:flex;justify-content:space-between;align-items:center;font-weight:900;font-size:16px;text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.ct .rar{font-size:11px;padding:2px 7px;border-radius:999px;color:#fff;background:#000}
+.card.SAR .rar{background:var(--sar)}.card.SR .rar{background:var(--sr);color:#000}.card.AR .rar{background:var(--ar);color:#000}
+.art{flex:1;margin:8px 0;background:rgba(255,255,255,.55);border:3px solid rgba(255,255,255,.7);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.art img{width:92%;height:92%;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.cb{display:flex;justify-content:space-between;align-items:flex-end;font-size:12px;font-weight:700}
+.cb .pr{font-size:15px;font-weight:900;background:rgba(255,255,255,.75);padding:2px 8px;border-radius:6px}
+.holo{position:absolute;inset:0;pointer-events:none;mix-blend-mode:color-dodge;opacity:0;border-radius:14px}
+.card.SR .holo,.card.SAR .holo{opacity:.55;background:linear-gradient(115deg,transparent 20%,rgba(255,0,150,.5) 35%,rgba(0,255,255,.5) 45%,rgba(255,255,0,.5) 55%,transparent 70%);background-size:300% 300%;animation:holo 3s linear infinite}
+.card.SAR .holo{opacity:.8}
+@keyframes holo{0%{background-position:0% 0%}100%{background-position:100% 100%}}
+.card.SAR .face.front::after{content:"";position:absolute;inset:-50%;background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.35) 75%,transparent 80%);animation:spin 2.5s linear infinite;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 모달 */
+.modal{position:fixed;inset:0;background:rgba(5,6,14,.86);display:none;align-items:center;justify-content:center;z-index:50;flex-direction:column;gap:16px;padding:20px;overflow:auto}
+.modal.on{display:flex}
+.modal .hint{color:var(--mut);font-size:14px}
+.modal .res{font-size:22px;font-weight:900;min-height:32px;text-align:center}
+.modal .res.SAR{color:var(--sar);text-shadow:0 0 20px var(--sar);animation:pop .5s}
+.modal .res.SR{color:var(--sr)}
+.modal .res.AR{color:var(--ar)}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
+.modal .btns{display:flex;gap:10px}
+.modal .cnt{color:var(--mut);font-size:12px}
+.flash{position:fixed;inset:0;pointer-events:none;z-index:49;background:radial-gradient(circle,rgba(255,61,138,.5),transparent 70%);opacity:0}
+.flash.on{animation:flash 1.2s}
+@keyframes flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+.conf{position:fixed;top:-10px;width:8px;height:14px;z-index:60;pointer-events:none;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.3}}
+
+/* 결과 요약 */
+.sum{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;max-width:900px;max-height:60vh;overflow:auto;padding:4px}
+.mini{background:var(--panel);border-radius:8px;padding:6px;text-align:center;font-size:11px;border:2px solid transparent}
+.mini img{width:100%;aspect-ratio:1;object-fit:contain}
+.mini.SAR{border-color:var(--sar)}.mini.SR{border-color:var(--sr)}.mini.AR{border-color:var(--ar)}
+.mini b{display:block;font-size:12px}
+.mini .p{color:var(--acc);font-weight:700}
+
+/* 도감 */
+.dex{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+.dx{background:var(--panel);border-radius:10px;padding:6px;text-align:center;font-size:11px;position:relative;border:2px solid transparent}
+.dx img{width:100%;aspect-ratio:1;object-fit:contain}
+.dx.no img{filter:brightness(0) opacity(.25)}
+.dx.no{color:var(--mut)}
+.dx .n{display:block;font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dx .cnt{position:absolute;top:4px;right:6px;background:var(--acc);color:#000;font-size:10px;font-weight:900;padding:1px 6px;border-radius:999px}
+.dx.SAR{border-color:var(--sar)}.dx.SR{border-color:var(--sr)}.dx.AR{border-color:var(--ar)}
+.dexhead{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.dexhead select{background:var(--panel);color:var(--txt);border:1px solid var(--line);padding:6px 10px;border-radius:8px;font-family:inherit}
+
+/* 기록 */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat .l{font-size:12px;color:var(--mut)}
+.stat .v{font-size:22px;font-weight:900;margin-top:2px}
+.stat .v.pos{color:#4ade80}.stat .v.neg{color:#ff6b6b}
+.log{display:flex;flex-direction:column;gap:6px}
+.lg{display:flex;align-items:center;gap:10px;background:var(--panel);border-radius:10px;padding:6px 10px;font-size:13px}
+.lg img{width:36px;height:36px;object-fit:contain}
+.lg .t{color:var(--mut);font-size:11px;margin-left:auto}
+/* 카드깡 */
+.sets{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:thin}
+.setb{flex:0 0 auto;background:var(--panel);border:2px solid var(--line);border-radius:12px;padding:8px 12px;text-align:left;color:var(--txt);min-width:150px}
+.setb.on{border-color:var(--acc);background:#2a2a1a}
+.setb b{display:block;font-size:14px}
+.setb small{color:var(--mut);font-size:11px}
+.tcginfo{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.tcginfo .pk{width:70px;height:98px;border-radius:8px;background:linear-gradient(160deg,#ffd75e,#ff7a3d 60%,#c1121f);display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:11px;text-align:center;padding:6px;box-shadow:0 8px 16px rgba(0,0,0,.4)}
+.tcginfo h3{font-size:18px}
+.tcginfo .d{font-size:12px;color:var(--mut);margin-top:3px}
+.tcginfo .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.tcgsub{display:flex;gap:6px;margin-bottom:10px}
+.sub{background:var(--panel);color:var(--mut);padding:6px 12px;border-radius:8px;font-weight:700;font-size:13px;border:1px solid var(--line)}
+.sub.on{color:var(--txt);border-color:var(--acc)}
+table.rt{width:100%;border-collapse:collapse;background:var(--panel);border-radius:12px;overflow:hidden;font-size:13px}
+table.rt th,table.rt td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--line)}
+table.rt th:first-child,table.rt td:first-child{text-align:left}
+table.rt th{color:var(--mut);font-weight:500;font-size:12px}
+.chip.N,.chip.U,.chip.R{background:#5b6485;color:#fff}.chip.RR,.chip.RRR{background:#7c8cff;color:#fff}.chip.K{background:#ffd7a3}.chip.S{background:#a7f3ff}.chip.SSR{background:#5ef0ff}
+.chip.UR,.chip.MUR,.chip.BWR{background:linear-gradient(90deg,#ffd700,#fff3a0,#ffd700);color:#000}.chip.ACE{background:#f472b6}.chip.CHR{background:#fda4af}.chip.CSR{background:#fb7185;color:#fff}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.cg{background:var(--panel);border-radius:8px;padding:4px;text-align:center;font-size:10px;position:relative;border:2px solid transparent}
+.cg img{width:100%;aspect-ratio:63/88;object-fit:cover;border-radius:5px;display:block;background:#0c0e1a}
+.cg.no img{filter:grayscale(1) brightness(.35)}
+.cg .cnt{position:absolute;top:4px;right:6px;background:var(--acc);color:#000;font-size:10px;font-weight:900;padding:1px 6px;border-radius:999px}
+.cg .nm{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.cg.SAR,.cg.SSR{border-color:var(--sar)}.cg.SR{border-color:var(--sr)}.cg.AR,.cg.S,.cg.K{border-color:var(--ar)}.cg.UR,.cg.MUR,.cg.BWR{border-color:#ffd700}
+.tcgcard{width:250px;aspect-ratio:63/88;perspective:1200px;position:relative;cursor:pointer;user-select:none}
+.tcgcard.flipped .card-inner{transform:rotateY(180deg)}
+.tcgcard .face.front{padding:0;border:0;background:#111;display:block}
+.tcgcard .face.front img{width:100%;height:100%;object-fit:cover;display:block}
+.tcgcard.rk4 .holo{opacity:.35}.tcgcard.rk6 .holo,.tcgcard.rk7 .holo{opacity:.6}.tcgcard.rk8 .holo{opacity:.7}
+.tcgcard.rk4 .holo,.tcgcard.rk5 .holo,.tcgcard.rk6 .holo,.tcgcard.rk7 .holo,.tcgcard.rk8 .holo{background:linear-gradient(115deg,transparent 20%,rgba(255,0,150,.5) 35%,rgba(0,255,255,.5) 45%,rgba(255,255,0,.5) 55%,transparent 70%);background-size:300% 300%;animation:holo 3s linear infinite}
+.tcgcard.rk8 .face.front::after{content:"";position:absolute;inset:-50%;background:conic-gradient(from 0deg,transparent 0 70%,rgba(255,255,255,.35) 75%,transparent 80%);animation:spin 2.5s linear infinite;pointer-events:none}
+.stack{position:absolute;inset:0;border-radius:14px;background:#1e3ea8;border:6px solid #2a4fd0;transform:translate(6px,6px);z-index:-1}
+.packlay{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;width:min(96vw,760px)}
+.packlay .tcgcard{width:100%}
+.packlay .tcgcard .face{border-radius:8px;box-shadow:0 8px 18px rgba(0,0,0,.5)}
+.packlay .tcgcard .face.back{border-width:4px}
+.packlay .tcgcard .face.back::before{width:55%}
+.packlay .tcgcard:not(.flipped):hover .card-inner{transform:translateY(-6px)}
+.packlay .tcgcard .card-inner{transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.packlay .lbl{font-size:11px;text-align:center;margin-top:4px;min-height:14px;font-weight:700}
+.packbtns{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.packlist{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;max-width:760px}
+.packlist i{width:14px;height:14px;border-radius:3px;background:#2a4fd0;display:block;cursor:pointer;border:1px solid transparent}
+.packlist i.done{background:#3a4166}.packlist i.hit{background:var(--sr)}.packlist i.big{background:var(--sar)}.packlist i.cur{border-color:#fff}
+.mini.tcg img{aspect-ratio:63/88;object-fit:cover;border-radius:4px}
+.sumhead{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:6px}
+@media (max-width:600px){.card,.tcgcard{width:210px}.tabs{width:100%;justify-content:space-around;margin-left:0}}
+</style>
+</head>
+<body>
+<header><div class="hwrap">
+  <div class="logo">포켓몬 <span>오리파</span></div>
+  <div class="wallet">💴 <b id="wallet">¥0</b><button id="charge">+¥50,000 충전</button></div>
+  <nav class="tabs">
+    <button class="tab on" data-v="oripa">오리파</button>
+    <button class="tab" data-v="tcg">카드깡</button>
+    <button class="tab" data-v="dex">도감</button>
+    <button class="tab" data-v="log">기록</button>
+  </nav>
+</div></header>
+
+<main>
+<section class="view on" id="v-oripa">
+  <h2>오리파 선택 <small>가격·시세는 스니덩(SNKRDUNK) 오리파를 참고한 가상 엔화</small></h2>
+  <div class="packs" id="packs"></div>
+  <div class="board" id="board"></div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<section class="view" id="v-tcg">
+  <h2>카드깡 <small>일본판 실제 카드 · 봉입률은 커뮤니티 개봉 통계 참고</small></h2>
+  <div class="sets" id="sets"></div>
+  <div class="tcginfo" id="tcginfo"></div>
+  <div class="tcgsub">
+    <button class="sub on" data-s="rates">봉입률</button>
+    <button class="sub" data-s="coll">세트 컬렉션</button>
+  </div>
+  <div id="tcg-rates"></div>
+  <div id="tcg-coll" style="display:none">
+    <div class="dexhead"><select id="collf"></select><span id="collcnt" style="font-size:12px;color:var(--mut)"></span></div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
+</section>
+
+<section class="view" id="v-dex">
+  <div class="dexhead">
+    <h2 style="margin:0">도감 <small id="dexcnt"></small></h2>
+    <select id="dexf"><option value="all">전체</option><option value="own">보유</option><option value="SAR">SAR</option><option value="SR">SR</option><option value="AR">AR</option></select>
+    <div style="margin-left:auto;font-size:12px;color:var(--mut)">보유 카드 시세 합계 <b id="dexval" style="color:var(--acc)"></b></div>
+  </div>
+  <div class="dex" id="dex"></div>
+</section>
+
+<section class="view" id="v-log">
+  <h2>뽑기 기록</h2>
+  <div class="stats" id="stats"></div>
+  <div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn danger" id="reset">전체 초기화</button></div>
+  <div class="log" id="log"></div>
+</section>
+</main>
+
+<div class="flash" id="flash"></div>
+<div class="modal" id="modal">
+  <div class="cnt" id="mcnt"></div>
+  <div class="res" id="mres"></div>
+  <div id="mcard"></div>
+  <div class="hint" id="mhint">카드를 눌러서 확인!</div>
+  <div class="btns"><button class="btn" id="mnext" style="display:none">다음</button><button class="btn sec" id="mclose">닫기</button></div>
+</div>
+
+<script src="cards.js"></script>
+<script>
+// ===== 데이터 =====
+const NAMES="이상해씨,이상해풀,이상해꽃,파이리,리자드,리자몽,꼬부기,어니부기,거북왕,캐터피,단데기,버터플,뿔충이,딱충이,독침붕,구구,피죤,피죤투,꼬렛,레트라,깨비참,깨비드릴조,아보,아보크,피카츄,라이츄,모래두지,고지,니드런♀,니드리나,니드퀸,니드런♂,니드리노,니드킹,삐삐,픽시,식스테일,나인테일,푸린,푸크린,주뱃,골뱃,뚜벅쵸,냄새꼬,라플레시아,파라스,파라섹트,콘팡,도나리,디그다,닥트리오,나옹,페르시온,고라파덕,골덕,망키,성원숭,가디,윈디,발챙이,슈륙챙이,강챙이,캐이시,윤겔라,후딘,알통몬,근육몬,괴력몬,모다피,우츠동,우츠보트,왕눈해,독파리,꼬마돌,데구리,딱구리,포니타,날쌩마,야돈,야도란,코일,레어코일,파오리,두두,두트리오,쥬쥬,쥬레곤,질퍽이,질뻐기,셀러,파르셀,고오스,고우스트,팬텀,롱스톤,슬리프,슬리퍼,크랩,킹크랩,찌리리공,붐볼,아라리,나시,탕구리,텅구리,시라소몬,홍수몬,내루미,또가스,또도가스,뿔카노,코뿌리,럭키,덩쿠리,캥카,쏘드라,시드라,콘치,왕콘치,별가사리,아쿠스타,마임맨,스라크,루주라,에레브,마그마,쁘사이저,켄타로스,잉어킹,갸라도스,라프라스,메타몽,이브이,샤미드,쥬피썬더,부스터,폴리곤,암나이트,암스타,투구,투구푸스,프테라,잠만보,프리져,썬더,파이어,미뇽,신뇽,망나뇽,뮤츠,뮤".split(",");
+const TYPES="ggg fff www bbb bbb nnn nn nn pp ee dd ppp ppp xx ff nn pp ggg bb bb dd nn ww hh ff www yyy hhh ggg ww rrr ff ww ee n nn ww pp ww ooo r yy ww ee gg dd hh n pp dd n g n ww ww ww y b i e f b n ww w n n w e f n rr rr r n i e f aaa yy".replace(/ /g,"");
+const TCOL={n:"#A8A77A",f:"#EE8130",w:"#6390F0",e:"#F7D02C",g:"#7AC74C",i:"#96D9D6",h:"#C22E28",p:"#A33EA1",d:"#E2BF65",y:"#F95587",b:"#A6B91A",r:"#B6A136",o:"#735797",a:"#6F35FC",x:"#D685AD"};
+const IMG=id=>`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+
+// 레어도 (스니덩 오리파의 SAR/SR/AR 구분 참고)
+const SAR_PRICE={6:65000,25:42000,151:30000,150:26000,9:20000,3:15000,149:18000,144:12000,145:10000,146:10000};
+const SR_PRICE={130:6500,59:6000,131:5800,143:5500,94:5200,65:4800,68:4200,142:4500,26:4000,38:5600,123:4400,127:3800,148:4600,121:3600,103:3200,132:4800,113:3400,134:5000,135:4700,136:4900,133:5400,116:3000,139:3100,141:3100,37:3900,36:3300,40:3300,122:3000,124:3500};
+const BASIC=new Set([1,4,7,10,13,16,19,21,23,27,29,32,35,39,41,43,46,48,50,52,54,56,58,60,63,66,69,72,74,77,79,81,83,84,86,88,90,92,95,96,98,100,102,104,106,107,108,109,111,114,115,118,120,125,126,128,129,137,138,140,147]);
+function rarityOf(id){ if(SAR_PRICE[id])return"SAR"; if(SR_PRICE[id])return"SR"; if(BASIC.has(id))return"C"; return"AR"; }
+function hash(n){ let x=(n*2654435761)>>>0; x^=x>>>13; x=(x*1274126177)>>>0; return (x>>>0)/4294967296; }
+function priceOf(id){
+  const r=rarityOf(id);
+  if(r==="SAR")return SAR_PRICE[id];
+  if(r==="SR")return SR_PRICE[id];
+  if(r==="AR")return Math.round((400+hash(id)*900)/10)*10;
+  return Math.round((30+hash(id)*80)/10)*10;
+}
+const POOL={SAR:[],SR:[],AR:[],C:[]};
+for(let i=1;i<=151;i++)POOL[rarityOf(i)].push(i);
+
+const PACKS=[
+  {key:"light",name:"라이트 오리파",tag:"입문",tagc:"#4ade80",price:1000,slots:100,mix:{SAR:2,SR:6,AR:32,C:60},desc:"가볍게 즐기는 1口 ¥1,000. SAR 2장 봉입."},
+  {key:"std",name:"스탠다드 오리파",tag:"인기",tagc:"#ffcb05",price:3000,slots:100,mix:{SAR:6,SR:20,AR:44,C:30},desc:"스니덩 정규 라인업 느낌. SAR 6장 봉입."},
+  {key:"sr",name:"SR이상 확정 오리파",tag:"확정",tagc:"#ff3d8a",price:10000,slots:50,mix:{SAR:10,SR:40,AR:0,C:0},desc:"뽑으면 무조건 SR 이상. 1口 ¥10,000 / 50口."},
+];
+const RNAME={SAR:"SAR 대박!",SR:"SR 당첨!",AR:"AR",C:"노멀"};
+
+// ===== 상태 =====
+const KEY="pokeoripa_v1";
+let S=load();
+function load(){ let s=null; try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){} if(!s||s.wallet==null) s={wallet:100000,spent:0,gained:0,pulls:0,coll:{},packs:{},log:[],sel:"light"}; if(!s.tcg) s.tcg={sel:null,coll:{},packs:0,spent:0,hits:{}}; return s; }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){} }
+const yen=n=>"¥"+n.toLocaleString("ko-KR");
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pick(pool,n){ const out=[];let bag=shuffle([...pool]); for(let i=0;i<n;i++){ if(!bag.length)bag=shuffle([...pool]); out.push(bag.pop()); } return out; }
+function newPack(p){
+  let ids=[]; for(const r in p.mix)ids=ids.concat(pick(POOL[r],p.mix[r]));
+  shuffle(ids);
+  return {slots:ids.map(id=>({id,open:false}))};
+}
+function getPack(key){ if(!S.packs[key])S.packs[key]=newPack(PACKS.find(p=>p.key===key)); return S.packs[key]; }
+
+// ===== 렌더 =====
+const $=s=>document.querySelector(s);
+function renderWallet(){ $("#wallet").textContent=yen(S.wallet); }
+function renderPacks(){
+  $("#packs").innerHTML=PACKS.map(p=>{
+    const pk=getPack(p.key); const left=pk.slots.filter(s=>!s.open).length;
+    return `<div class="pack ${S.sel===p.key?"on":""}" data-k="${p.key}">
+      <span class="tag" style="background:${p.tagc};color:#000">${p.tag}</span>
+      <h3>${p.name}</h3>
+      <div class="price">${yen(p.price)} <small>/ 1口</small></div>
+      <div style="font-size:12px;color:var(--mut);margin-top:4px">${p.desc}</div>
+      <div class="odds">${Object.entries(p.mix).filter(([r,n])=>n).map(([r,n])=>`<span class="chip ${r}">${r} ${n}</span>`).join("")}</div>
+      <div class="left">남은 口 ${left} / ${p.slots}<div class="bar"><i style="width:${left/p.slots*100}%"></i></div></div>
+    </div>`;}).join("");
+  document.querySelectorAll(".pack").forEach(el=>el.onclick=()=>{S.sel=el.dataset.k;save();renderAll();});
+}
+function renderBoard(){
+  const p=PACKS.find(x=>x.key===S.sel), pk=getPack(p.key);
+  const left=r=>pk.slots.filter(s=>!s.open&&rarityOf(s.id)===r).length;
+  const remain=pk.slots.filter(s=>!s.open).length;
+  const remainVal=pk.slots.filter(s=>!s.open).reduce((a,s)=>a+priceOf(s.id),0);
+  $("#board").innerHTML=`
+    <div class="st">남은 당첨</div>
+    ${Object.keys(p.mix).filter(r=>p.mix[r]).map(r=>`<div class="st"><span class="chip ${r}">${r}</span><b>${left(r)}</b><span style="color:var(--mut)">/${p.mix[r]}</span></div>`).join("")}
+    <div class="st" style="color:var(--mut);font-size:12px">잔여 시세 합계 ${yen(remainVal)}</div>
+    <div class="actions">
+      <button class="btn" id="pull1" ${remain<1?"disabled":""}>랜덤 1口 (${yen(p.price)})</button>
+      <button class="btn" id="pull10" ${remain<10?"disabled":""}>10連 (${yen(p.price*10)})</button>
+      <button class="btn sec" id="repack">새 팩 개봉</button>
+    </div>`;
+  $("#pull1").onclick=()=>pull(1);
+  $("#pull10").onclick=()=>pull(10);
+  $("#repack").onclick=()=>{ if(remain===0||confirm("남은 口를 버리고 새 팩을 개봉할까요?")){S.packs[p.key]=newPack(p);save();renderAll();} };
+}
+function renderGrid(){
+  const pk=getPack(S.sel);
+  $("#grid").innerHTML=pk.slots.map((s,i)=>s.open
+    ?`<div class="slot open ${rarityOf(s.id)}" data-n="${i+1}" title="${NAMES[s.id-1]}"><img src="${IMG(s.id)}" alt=""></div>`
+    :`<div class="slot" data-n="${i+1}" data-i="${i}"></div>`).join("");
+  document.querySelectorAll(".slot:not(.open)").forEach(el=>el.onclick=()=>pull(1,+el.dataset.i));
+}
+function renderAll(){ renderWallet();renderPacks();renderBoard();renderGrid(); }
+
+// ===== 뽑기 =====
+let queue=[],qi=0;
+function pull(n,idx){
+  const p=PACKS.find(x=>x.key===S.sel), pk=getPack(p.key);
+  const cost=p.price*n;
+  if(S.wallet<cost){ alert(`잔액 부족! ${yen(cost)} 필요 (보유 ${yen(S.wallet)})\n상단 충전 버튼을 눌러주세요.`); return; }
+  let closed=pk.slots.map((s,i)=>s.open?-1:i).filter(i=>i>=0);
+  let chosen;
+  if(idx!=null){ chosen=[idx]; const el=document.querySelector(`.slot[data-i="${idx}"]`); el&&el.classList.add("shake"); }
+  else chosen=shuffle(closed).slice(0,n);
+  S.wallet-=cost; S.spent+=cost; S.pulls+=chosen.length;
+  queue=chosen.map(i=>{ const s=pk.slots[i]; s.open=true; const id=s.id; const r=rarityOf(id), pr=priceOf(id);
+    S.gained+=pr; S.coll[id]=(S.coll[id]||0)+1;
+    S.log.unshift({id,r,pr,pack:p.name,slot:i+1,t:Date.now()}); return {id,r,pr,slot:i+1}; });
+  S.log=S.log.slice(0,200);
+  save(); qi=0;
+  setTimeout(()=>{ renderAll(); showCard(); },idx!=null?350:0);
+}
+function showCard(){
+  const m=$("#modal"); m.classList.add("on");
+  const c=queue[qi]; const rar=c.r;
+  $("#mcnt").textContent=queue.length>1?`${qi+1} / ${queue.length}`:`No.${c.slot}`;
+  $("#mres").textContent=""; $("#mres").className="res";
+  $("#mhint").style.display="block"; $("#mnext").style.display="none";
+  $("#mcard").innerHTML=cardHTML(c.id,rar);
+  const card=$("#mcard .card");
+  card.onclick=()=>{ if(card.classList.contains("flipped"))return; card.classList.add("flipped");
+    setTimeout(()=>{ $("#mres").textContent=`${RNAME[rar]}  ${NAMES[c.id-1]}  ${yen(c.pr)}`; $("#mres").className="res "+rar;
+      if(rar==="SAR"){ $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on"); confetti(); }
+      $("#mhint").style.display="none";
+      if(qi<queue.length-1){ $("#mnext").textContent="다음"; $("#mnext").style.display="inline-block"; $("#mnext").onclick=()=>{qi++;showCard();}; }
+      else if(queue.length>1){ $("#mnext").textContent="결과 보기"; $("#mnext").style.display="inline-block"; $("#mnext").onclick=showSummary; }
+    },500); };
+}
+function showSummary(){
+  const tot=queue.reduce((a,c)=>a+c.pr,0);
+  const p=PACKS.find(x=>x.key===S.sel);
+  $("#mcnt").textContent=`${queue.length}連 결과`;
+  $("#mres").className="res"; $("#mres").innerHTML=`획득 시세 <span style="color:var(--acc)">${yen(tot)}</span> <span style="font-size:14px;color:var(--mut)">/ 지출 ${yen(p.price*queue.length)}</span>`;
+  $("#mnext").style.display="none"; $("#mhint").style.display="none";
+  $("#mcard").innerHTML=`<div class="sum">${[...queue].sort((a,b)=>b.pr-a.pr).map(c=>`<div class="mini ${c.r}"><img src="${IMG(c.id)}" alt=""><b>${NAMES[c.id-1]}</b><span class="chip ${c.r}">${c.r}</span><div class="p">${yen(c.pr)}</div></div>`).join("")}</div>`;
+}
+function cardHTML(id,r){
+  return `<div class="card ${r}" style="--tc:${TCOL[TYPES[id-1]]}"><div class="card-inner">
+    <div class="face back"></div>
+    <div class="face front">
+      <div class="ct"><span>${NAMES[id-1]}</span><span class="rar">${r}</span></div>
+      <div class="art"><img src="${IMG(id)}" alt="${NAMES[id-1]}"></div>
+      <div class="cb"><span>No.${String(id).padStart(3,"0")} · 1세대</span><span class="pr">${yen(priceOf(id))}</span></div>
+      <div class="holo"></div>
+    </div></div></div>`;
+}
+$("#mclose").onclick=()=>{ $("#modal").classList.remove("on"); queue=[]; };
+$("#modal").onclick=e=>{ if(e.target.id==="modal")$("#mclose").click(); };
+function confetti(){ const cols=["#ff3d8a","#ffcb05","#3fb8ff","#4ade80","#fff"];
+  for(let i=0;i<90;i++){ const d=document.createElement("div"); d.className="conf";
+    d.style.left=Math.random()*100+"vw"; d.style.background=cols[i%cols.length];
+    d.style.animationDuration=(1.8+Math.random()*1.6)+"s"; d.style.animationDelay=Math.random()*.4+"s";
+    document.body.appendChild(d); setTimeout(()=>d.remove(),4000); } }
+
+// ===== 도감 =====
+function renderDex(){
+  const f=$("#dexf").value; let owned=0,val=0,html="";
+  for(let i=1;i<=151;i++){ const c=S.coll[i]||0, r=rarityOf(i); if(c){owned++;val+=priceOf(i)*c;}
+    if(f==="own"&&!c)continue; if(["SAR","SR","AR"].includes(f)&&r!==f)continue;
+    html+=`<div class="dx ${c?r:"no"}"><img src="${IMG(i)}" alt="" loading="lazy">${c?`<span class="cnt">×${c}</span>`:""}<span class="n">${c?NAMES[i-1]:"???"}</span><span style="color:var(--mut)">No.${String(i).padStart(3,"0")}${c?" · "+yen(priceOf(i)):""}</span></div>`; }
+  $("#dex").innerHTML=html; $("#dexcnt").textContent=`${owned} / 151 수집`; $("#dexval").textContent=yen(val);
+}
+$("#dexf").onchange=renderDex;
+
+// ===== 기록 =====
+function renderLog(){
+  const diff=S.gained-S.spent, roi=S.spent?Math.round(S.gained/S.spent*100):0;
+  const sar=S.log.filter(l=>l.r==="SAR").length;
+  $("#stats").innerHTML=`
+    <div class="stat"><div class="l">총 뽑은 口</div><div class="v">${S.pulls}口</div></div>
+    <div class="stat"><div class="l">총 지출</div><div class="v">${yen(S.spent)}</div></div>
+    <div class="stat"><div class="l">획득 카드 시세 합계</div><div class="v" style="color:var(--acc)">${yen(S.gained)}</div></div>
+    <div class="stat"><div class="l">손익 / 회수율</div><div class="v ${diff>=0?"pos":"neg"}">${diff>=0?"+":""}${yen(diff)} <small style="font-size:13px">(${roi}%)</small></div></div>
+    <div class="stat"><div class="l">SAR 적중</div><div class="v" style="color:var(--sar)">${sar}장</div></div>`;
+  const t=S.tcg, hits=Object.entries(t.hits||{}).sort((a,b)=>RANK[b[0]]-RANK[a[0]]);
+  $("#stats").innerHTML+=`
+    <div class="stat"><div class="l">카드깡 개봉 팩</div><div class="v">${t.packs}팩</div></div>
+    <div class="stat"><div class="l">카드깡 지출</div><div class="v">${yen(t.spent)}</div></div>
+    <div class="stat"><div class="l">카드깡 SR 이상 적중</div><div class="v" style="font-size:15px;line-height:1.7">${hits.length?hits.map(([r,n])=>`<span class="chip ${r}">${r}</span> ${n}장`).join(" "):"-"}</div></div>`;
+  $("#log").innerHTML=S.log.length?S.log.slice(0,60).map(l=>`<div class="lg"><img src="${l.thumb||(l.img?l.img+"/low.webp":IMG(l.id))}" alt=""><span class="chip ${l.r}">${l.r}</span><b>${l.name||NAMES[l.id-1]}</b><span style="color:var(--acc);font-weight:700">${l.pr!=null?yen(l.pr):""}</span><span class="t">${l.pack}${l.slot?" No."+l.slot:""} · ${new Date(l.t).toLocaleString("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"})}</span></div>`).join(""):`<div class="note">아직 기록이 없어요. 오리파를 뽑아보세요!</div>`;
+}
+$("#reset").onclick=()=>{ if(confirm("코인·도감·기록을 모두 초기화할까요?")){try{localStorage.removeItem(KEY);}catch(e){}S=load();renderAll();renderLog();} };
+
+// ===== 카드깡 (실제 일본판 카드) =====
+const SETS=window.CARD_SETS||{};
+const ASSET="https://assets.tcgdex.net/ja/";
+const LIM="https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/";
+// 이미지: 썸네일은 TCGdex(low.webp, 가벼움) 우선, 없으면 Limitless. 큰 이미지는 TCGdex high.webp 우선.
+const limUrl=(sid,no,sz)=>`${LIM}${sid}/${sid}_${parseInt(no,10)}_R_JP_${sz}.png`;
+const thumbUrl=(sid,c)=>c[4]?ASSET+c[4]+"/low.webp":limUrl(sid,c[0],"XS");
+const bigUrl=(sid,c)=>c[4]?ASSET+c[4]+"/high.webp":limUrl(sid,c[0],"LG");
+const RANK={N:0,C:0,U:1,R:2,RR:3,RRR:3,ACE:3,K:4,AR:4,CHR:4,S:5,SSR:6,SR:6,CSR:6,SAR:7,UR:8,MUR:8,BWR:8};
+const RLABEL={N:"ノーマル",C:"C",U:"U",R:"R",RR:"RR",RRR:"RRR",ACE:"ACE",K:"かがやく",AR:"AR",CHR:"CHR",S:"S 色違い",SSR:"SSR",SR:"SR",CSR:"CSR",SAR:"SAR",UR:"UR",MUR:"MUR",BWR:"BWR"};
+const FALL={MUR:"UR",BWR:"UR",UR:"SAR",SAR:"SR",CSR:"SR",SR:"AR",SSR:"S",S:"AR",CHR:"AR",K:"AR",AR:"RR",ACE:"RR",RRR:"RR",RR:"R",R:"U",U:"C",C:"N",N:"C"};
+// 팩 템플릿: 슬롯별 레어도 가중치 (%). 박스당 기대치는 UI에서 자동 계산.
+const TPL={
+  std:   [{C:100},{C:100},{C:70,U:30},{U:100},{R:71.7,RR:13.3,AR:10,SR:3,SAR:0.6,TOP:0.35}],
+  std151:[{C:100},{C:100},{C:70,U:30},{U:100},{R:66,RR:15,AR:12,SR:5,SAR:1.5,TOP:0.5}],
+  bw:    [{C:100},{C:100},{C:70,U:30},{U:72,AR:28},{R:68,RR:15,AR:10,SR:4.5,SAR:2,TOP:0.5}],
+  hc:    [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:60,AR:40},{RR:50,AR:45,SR:5},{AR:60,RR:19,SR:6,SAR:10,TOP:5}],
+  shiny: [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:90,N:10},{S:30,RR:40,N:30},{SSR:10,SR:5,SAR:1.2,AR:0.9,TOP:1,N:81.9}],
+  vstar: [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:60,RRR:25,K:15},{AR:60,RR:25,RRR:15},{AR:45,SAR:12,SR:10,TOP:4,K:9,RR:20}],
+};
+function setTop(set){ return set.cards.some(c=>c[2]==="MUR")?"MUR":set.cards.some(c=>c[2]==="BWR")?"BWR":"UR"; }
+function pools(set){ if(set._p)return set._p; const p={}; set.cards.forEach(c=>{(p[c[2]]=p[c[2]]||[]).push(c);}); return set._p=p; }
+function resolve(set,r){ const p=pools(set); let k=r==="TOP"?setTop(set):r; let g=0; while(!(p[k]&&p[k].length)&&g++<12)k=FALL[k]; return k; }
+// 세트에 맞게 템플릿 가중치를 실제 존재하는 레어도로 정규화
+function slotsFor(set){
+  return TPL[set.tpl].map(w=>{ const m={}; for(const r in w){ const k=resolve(set,r); m[k]=(m[k]||0)+w[r]; } return m; });
+}
+function drawSlot(set,w){ const tot=Object.values(w).reduce((a,b)=>a+b,0); let x=Math.random()*tot; for(const r in w){ x-=w[r]; if(x<0){ const pool=pools(set)[r]; return pool[Math.floor(Math.random()*pool.length)]; } } const r=Object.keys(w)[0]; const pool=pools(set)[r]; return pool[Math.floor(Math.random()*pool.length)]; }
+function openPack(set){ const out=[]; slotsFor(set).forEach(w=>{ let c,t=0; do{ c=drawSlot(set,w); }while(out.includes(c)&&t++<6); out.push(c); }); return out.sort((a,b)=>RANK[a[2]]-RANK[b[2]]); }
+function cardObj(set,c){ return {sid:set.id,id:set.id+"-"+c[0],no:c[0],name:c[1],r:c[2],thumb:thumbUrl(set.id,c),big:bigUrl(set.id,c)}; }
+function curSet(){ const keys=Object.keys(SETS); if(!keys.length)return null; if(!S.tcg.sel||!SETS[S.tcg.sel])S.tcg.sel=keys[0]; return SETS[S.tcg.sel]; }
+
+function renderTcg(){
+  const set=curSet();
+  if(!set){ $("#sets").innerHTML=`<div class="note">cards.js를 찾을 수 없어요. index.html과 같은 폴더에 있어야 합니다.</div>`; return; }
+  $("#sets").innerHTML=Object.values(SETS).map(s=>`<button class="setb ${s.id===set.id?"on":""}" data-s="${s.id}"><b>${s.name}</b><small>${s.id} · ${s.date} · ${s.cpp}枚 ${yen(s.price)}</small></button>`).join("");
+  document.querySelectorAll(".setb").forEach(b=>b.onclick=()=>{S.tcg.sel=b.dataset.s;save();renderTcg();});
+  const owned=Object.keys(S.tcg.coll).filter(k=>k.startsWith(set.id+"-")).length;
+  $("#tcginfo").innerHTML=`<div class="pk">${set.name}</div>
+    <div><h3>${set.name} <span style="font-size:12px;color:var(--mut)">${set.id}</span></h3>
+      <div class="d">발매 ${set.date} · 전 ${set.total}종 · 1팩 ${set.cpp}장 ${yen(set.price)} · 1BOX ${set.ppb}팩 ${yen(set.price*set.ppb)}</div>
+      <div class="d">이 세트 수집 <b style="color:var(--acc)">${owned} / ${set.total}</b></div></div>
+    <div class="actions"><button class="btn" id="op1">1팩 개봉 (${yen(set.price)})</button><button class="btn sec" id="op10">${set.ppb}팩 = 1BOX (${yen(set.price*set.ppb)})</button></div>`;
+  $("#op1").onclick=()=>openPacks(set,1);
+  $("#op10").onclick=()=>openPacks(set,set.ppb);
+  renderRates(set); renderColl(set);
+}
+function renderRates(set){
+  const slots=slotsFor(set); const per={};
+  slots.forEach(w=>{ const tot=Object.values(w).reduce((a,b)=>a+b,0); for(const r in w)per[r]=(per[r]||0)+w[r]/tot; });
+  const rows=Object.keys(per).sort((a,b)=>RANK[b]-RANK[a]);
+  const cnt=pools(set);
+  $("#tcg-rates").innerHTML=`<table class="rt"><tr><th>레어도</th><th>수록</th><th>1팩당 기대 장수</th><th>1팩에 1장 이상 나올 확률</th><th>1BOX(${set.ppb}팩) 기대 장수</th></tr>
+    ${rows.map(r=>{ const e=per[r]; const box=e*set.ppb; const p1=1-slots.reduce((a,w)=>{const tot=Object.values(w).reduce((x,y)=>x+y,0);return a*(1-(w[r]||0)/tot);},1);
+      return `<tr><td><span class="chip ${r}">${RLABEL[r]||r}</span></td><td>${cnt[r].length}종</td><td>${e.toFixed(3)}</td><td>${(p1*100).toFixed(2)}%</td><td>${box>=1?box.toFixed(1)+"장":"약 "+(1/box).toFixed(1)+"BOX에 1장"}</td></tr>`;}).join("")}
+    </table><div class="note" style="margin-top:8px">※ 공식 확률은 비공개라 커뮤니티 개봉 통계(BOX당 SR이상 1장 보장 수준, SAR 약 5~6BOX당 1장, UR 약 10BOX당 1장 등)를 참고한 근사치입니다.</div>`;
+}
+function renderColl(set){
+  const sel=$("#collf"); const rs=Object.keys(pools(set)).sort((a,b)=>RANK[b]-RANK[a]);
+  if(sel.dataset.sid!==set.id){ sel.innerHTML=`<option value="all">전체</option><option value="own">보유</option>`+rs.map(r=>`<option value="${r}">${RLABEL[r]||r}</option>`).join(""); sel.dataset.sid=set.id; sel.onchange=()=>renderColl(set); }
+  const f=sel.value; let own=0,html="";
+  set.cards.forEach(c=>{ const id=set.id+"-"+c[0], n=S.tcg.coll[id]||0; if(n)own++;
+    if(f==="own"&&!n)return; if(f!=="all"&&f!=="own"&&c[2]!==f)return;
+    html+=`<div class="cg ${n?c[2]:"no"}" title="${c[1]} ${c[2]}"><img src="${thumbUrl(set.id,c)}" alt="" loading="lazy">${n?`<span class="cnt">×${n}</span>`:""}<span class="nm">${c[0]} ${n?c[1]:"???"}</span><span class="chip ${c[2]}" style="font-size:9px;padding:1px 5px">${c[2]}</span></div>`; });
+  $("#cgrid").innerHTML=html; $("#collcnt").textContent=`${own} / ${set.total} 수집`;
+}
+document.querySelectorAll(".sub").forEach(b=>b.onclick=()=>{ document.querySelectorAll(".sub").forEach(x=>x.classList.toggle("on",x===b)); $("#tcg-rates").style.display=b.dataset.s==="rates"?"block":"none"; $("#tcg-coll").style.display=b.dataset.s==="coll"?"block":"none"; });
+
+let tq=[],tqi=0,tset=null;
+function openPacks(set,n){
+  const cost=set.price*n;
+  if(S.wallet<cost){ alert(`잔액 부족! ${yen(cost)} 필요 (보유 ${yen(S.wallet)})`); return; }
+  S.wallet-=cost; S.tcg.spent+=cost; S.tcg.packs+=n;
+  tset=set; tq=[]; tpacks=[];
+  for(let i=0;i<n;i++){ const pk=openPack(set).map(c=>cardObj(set,c)); tpacks.push(pk); pk.forEach(o=>{ tq.push(o); S.tcg.coll[o.id]=(S.tcg.coll[o.id]||0)+1;
+    if(RANK[o.r]>=6){ S.tcg.hits[o.r]=(S.tcg.hits[o.r]||0)+1; S.log.unshift({thumb:o.thumb,name:o.name,r:o.r,pack:set.name+" "+o.no,t:Date.now()}); } }); }
+  S.log=S.log.slice(0,200); save(); renderWallet(); renderTcg();
+  if(n===1){ tqi=0; showTcgCard(); } else { tpi=0; tpacks.forEach(p=>p.opened=false); showTcgPack(); }
+}
+// BOX 개봉: 팩 하나씩 깔아놓고 넘기기
+let tpacks=[],tpi=0;
+function showTcgPack(){
+  const m=$("#modal"); m.classList.add("on"); const pk=tpacks[tpi];
+  $("#mcnt").textContent=`${tset.name} · ${tpi+1} / ${tpacks.length}팩`;
+  $("#mres").textContent=""; $("#mres").className="res"; $("#mhint").style.display="none"; $("#mnext").style.display="none";
+  $("#mcard").innerHTML=`<div class="packlist">${tpacks.map((p,i)=>{ const mx=Math.max(...p.map(c=>RANK[c.r])); return `<i class="${i===tpi?"cur":""} ${p.opened?(mx>=7?"big":mx>=6?"hit":"done"):""}" data-i="${i}" title="${i+1}팩"></i>`; }).join("")}</div>
+    <div class="packlay">${pk.map((c,i)=>`<div><div class="tcgcard rk${RANK[c.r]}" data-i="${i}"><div class="card-inner"><div class="face back"></div><div class="face front"><img src="${c.big}" alt="${c.name}" loading="lazy"><div class="holo"></div></div></div></div><div class="lbl"></div></div>`).join("")}</div>
+    <div class="packbtns"><button class="btn sec" id="pkall">모두 뒤집기</button><button class="btn" id="pknext">${tpi<tpacks.length-1?"다음 팩 ▶":"결과 보기"}</button>${tpi<tpacks.length-1?`<button class="btn sec" id="pksum">결과 보기</button>`:""}</div>`;
+  pk.forEach(c=>{ const pre=new Image(); pre.src=c.big; });
+  const cards=[...document.querySelectorAll("#mcard .tcgcard")];
+  const flip=el=>{ if(el.classList.contains("flipped"))return; el.classList.add("flipped"); const c=pk[+el.dataset.i]; const rk=RANK[c.r];
+    el.nextElementSibling.innerHTML=`<span class="chip ${c.r}" style="font-size:10px;padding:1px 6px">${c.r}</span> ${c.name}`;
+    if(rk>=6){ $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on"); if(rk>=7)confetti(); }
+    if(cards.every(x=>x.classList.contains("flipped"))){ pk.opened=true; const best=[...pk].sort((a,b)=>RANK[b.r]-RANK[a.r])[0];
+      $("#mres").innerHTML=RANK[best.r]>=3?`<span class="chip ${best.r}" style="font-size:14px">${RLABEL[best.r]||best.r}</span> ${best.name}`:`<span style="color:var(--mut);font-size:15px">꽝… 다음 팩!</span>`;
+      $("#mres").className="res "+(RANK[best.r]>=7?"SAR":RANK[best.r]>=6?"SR":RANK[best.r]>=4?"AR":""); } };
+  cards.forEach(el=>el.onclick=()=>flip(el));
+  $("#pkall").onclick=()=>{ cards.forEach((el,i)=>setTimeout(()=>flip(el),i*120)); };
+  $("#pknext").onclick=()=>{ if(tpi<tpacks.length-1){ tpi++; showTcgPack(); } else showTcgSummary(`${tpacks.length}팩 개봉 결과`); };
+  const ps=$("#pksum"); if(ps)ps.onclick=()=>showTcgSummary(`${tpacks.length}팩 개봉 결과`);
+  document.querySelectorAll(".packlist i").forEach(el=>el.onclick=()=>{ tpi=+el.dataset.i; showTcgPack(); });
+}
+function showTcgCard(){
+  const m=$("#modal"); m.classList.add("on"); const c=tq[tqi]; const rk=RANK[c.r];
+  $("#mcnt").textContent=`${tqi+1} / ${tq.length}`; $("#mres").textContent=""; $("#mres").className="res";
+  $("#mhint").style.display="block"; $("#mnext").style.display="none";
+  $("#mcard").innerHTML=`<div class="tcgcard rk${rk}"><div class="stack"></div><div class="card-inner"><div class="face back"></div><div class="face front"><img src="${c.big}" alt="${c.name}"><div class="holo"></div></div></div></div>`;
+  const card=$("#mcard .tcgcard");
+  card.onclick=()=>{ if(card.classList.contains("flipped"))return; card.classList.add("flipped");
+    setTimeout(()=>{ const big=rk>=6; $("#mres").innerHTML=`<span class="chip ${c.r}" style="font-size:14px">${RLABEL[c.r]||c.r}</span> ${c.name} <span style="font-size:13px;color:var(--mut)">${c.no}/${tset.total}</span>`;
+      $("#mres").className="res "+(rk>=7?"SAR":rk>=6?"SR":rk>=4?"AR":"");
+      if(big){ $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on"); if(rk>=7)confetti(); }
+      $("#mhint").style.display="none";
+      $("#mnext").style.display="inline-block";
+      if(tqi<tq.length-1){ $("#mnext").textContent="다음 카드"; $("#mnext").onclick=()=>{tqi++;showTcgCard();}; }
+      else { $("#mnext").textContent="결과 보기"; $("#mnext").onclick=()=>showTcgSummary("개봉 결과"); }
+    },500); };
+  // 다음 카드 미리 로드
+  if(tq[tqi+1]){ const pre=new Image(); pre.src=tq[tqi+1].big; }
+}
+function showTcgSummary(title){
+  $("#modal").classList.add("on"); $("#mnext").style.display="none"; $("#mhint").style.display="none";
+  const cnt={}; tq.forEach(c=>cnt[c.r]=(cnt[c.r]||0)+1);
+  const rs=Object.keys(cnt).sort((a,b)=>RANK[b]-RANK[a]);
+  const top=[...tq].filter(c=>RANK[c.r]>=3).sort((a,b)=>RANK[b.r]-RANK[a.r]);
+  $("#mcnt").textContent=`${tset.name} · ${title}`;
+  $("#mres").className="res"; $("#mres").innerHTML=`<div class="sumhead">${rs.map(r=>`<span class="chip ${r}">${RLABEL[r]||r} ×${cnt[r]}</span>`).join("")}</div>`;
+  $("#mcard").innerHTML=`<div class="sum">${(top.length?top:tq.slice(0,20)).map(c=>`<div class="mini tcg ${RANK[c.r]>=7?"SAR":RANK[c.r]>=6?"SR":RANK[c.r]>=4?"AR":""}"><img src="${c.thumb}" alt="" loading="lazy"><b>${c.name}</b><span class="chip ${c.r}">${c.r}</span></div>`).join("")}</div>
+    ${top.length?"":`<div class="note" style="text-align:center;margin-top:8px">RR 이상 없음… 다음 팩을 노려보자!</div>`}`;
+}
+
+// ===== 탭 / 충전 =====
+document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===t));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+t.dataset.v));
+  if(t.dataset.v==="dex")renderDex(); if(t.dataset.v==="log")renderLog(); if(t.dataset.v==="tcg")renderTcg();
+});
+$("#charge").onclick=()=>{ S.wallet+=50000; save(); renderWallet(); };
+
+console.assert(TYPES.length===151&&NAMES.length===151,"data length",TYPES.length,NAMES.length);
+renderAll();
+</script>
+</body>
+</html>
