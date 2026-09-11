@@ -450,14 +450,14 @@ const thumbUrl=(sid,c)=>c[4]?ASSET+c[4]+"/low.webp":limUrl(sid,c[0],"XS");
 const bigUrl=(sid,c)=>c[4]?ASSET+c[4]+"/high.webp":limUrl(sid,c[0],"LG");
 const RANK={N:0,C:0,U:1,R:2,RR:3,RRR:3,ACE:3,K:4,AR:4,CHR:4,S:5,SSR:6,SR:6,CSR:6,SAR:7,UR:8,MUR:8,BWR:8};
 const RLABEL={N:"노멀",C:"C",U:"U",R:"R",RR:"RR",RRR:"RRR",ACE:"ACE",K:"K 빛나는",AR:"AR",CHR:"CHR",S:"S 색이 다른",SSR:"SSR",SR:"SR",CSR:"CSR",SAR:"SAR",UR:"UR",MUR:"MUR",BWR:"BWR"};
-const FALL={MUR:"UR",BWR:"UR",UR:"SAR",SAR:"SR",CSR:"SR",SR:"AR",SSR:"S",S:"AR",CHR:"AR",K:"AR",AR:"RR",ACE:"RR",RRR:"RR",RR:"R",R:"U",U:"C",C:"N",N:"C"};
+const FALL={MUR:"UR",BWR:"UR",UR:"SAR",SAR:"SR",CSR:"SR",SR:"AR",SSR:"S",S:"AR",CHR:"AR",K:"AR",AR:"R",ACE:"RR",RRR:"RR",RR:"R",R:"U",U:"C",C:"N",N:"C"};
 // 팩 템플릿: 슬롯별 레어도 가중치 (%). 박스당 기대치는 UI에서 자동 계산.
 const TPL={
-  std:   [{C:100},{C:100},{C:70,U:30},{U:100},{R:71.7,RR:13.3,AR:10,SR:3,SAR:0.6,TOP:0.35}],
+  std:   [{C:100},{C:100},{C:70,U:30},{U:100},{R:71.9,RR:13.3,AR:10,SR:3,SAR:0.5,TOP:0.3}],
   std151:[{C:100},{C:100},{C:70,U:30},{U:100},{R:66,RR:15,AR:12,SR:5,SAR:1.5,TOP:0.5}],
   bw:    [{C:100},{C:100},{C:70,U:30},{U:72,AR:28},{R:68,RR:15,AR:10,SR:4.5,SAR:2,TOP:0.5}],
-  hc:    [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:60,AR:40},{RR:50,AR:45,SR:5},{AR:60,RR:19,SR:6,SAR:10,TOP:5}],
-  shiny: [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:90,N:10},{S:30,RR:40,N:30},{SSR:10,SR:5,SAR:1.2,AR:0.9,TOP:1,N:81.9}],
+  hc:    [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:60,AR:40},{RR:50,AR:47,SR:3},{AR:63,RR:19,SR:3,SAR:10,TOP:5}],
+  shiny: [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:90,N:10},{S:30,N:70},{SSR:10,SR:5,SAR:1.2,AR:0.9,TOP:1,N:81.9}],
   vstar: [{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{N:100},{RR:60,RRR:25,K:15},{AR:60,RR:25,RRR:15},{AR:45,SAR:12,SR:10,TOP:4,K:9,RR:20}],
 };
 function setTop(set){ return set.cards.some(c=>c[2]==="MUR")?"MUR":set.cards.some(c=>c[2]==="BWR")?"BWR":"UR"; }
@@ -495,7 +495,7 @@ function renderRates(set){
   $("#tcg-rates").innerHTML=`<table class="rt"><tr><th>레어도</th><th>수록</th><th>1팩당 기대 장수</th><th>1팩에 1장 이상 나올 확률</th><th>1BOX(${set.ppb}팩) 기대 장수</th></tr>
     ${rows.map(r=>{ const e=per[r]; const box=e*set.ppb; const p1=1-slots.reduce((a,w)=>{const tot=Object.values(w).reduce((x,y)=>x+y,0);return a*(1-(w[r]||0)/tot);},1);
       return `<tr><td><span class="chip ${r}">${RLABEL[r]||r}</span></td><td>${cnt[r].length}종</td><td>${e.toFixed(3)}</td><td>${(p1*100).toFixed(2)}%</td><td>${box>=1?box.toFixed(1)+"장":"약 "+(1/box).toFixed(1)+"BOX에 1장"}</td></tr>`;}).join("")}
-    </table><div class="note" style="margin-top:8px">※ 공식 확률은 비공개라 커뮤니티 개봉 통계(BOX당 SR이상 1장 보장 수준, SAR 약 5~6BOX당 1장, UR 약 10BOX당 1장 등)를 참고한 근사치입니다.</div>`;
+    </table><div class="note" style="margin-top:8px">※ 공식 확률은 비공개라 커뮤니티 개봉 통계(BOX당 SR이상 1장 보장 수준, SAR 약 5~6BOX당 1장, UR 약 10BOX당 1장 등)를 참고한 근사치입니다. 위 표는 팩 단위 확률이고, 1BOX 개봉 시에는 실제 박스처럼 상위 레어 1장(일반 SR이상 / 하이클래스 SAR이상 / 샤이니 SSR이상)이 추가로 보장됩니다.</div>`;
 }
 function renderColl(set){
   const sel=$("#collf"); const rs=Object.keys(pools(set)).sort((a,b)=>RANK[b]-RANK[a]);
@@ -514,8 +514,14 @@ function openPacks(set,n){
   if(S.wallet<cost){ alert(`잔액 부족! ${yen(cost)} 필요 (보유 ${yen(S.wallet)})`); return; }
   S.wallet-=cost; S.tcg.spent+=cost; S.tcg.packs+=n;
   tset=set; tq=[]; tpacks=[];
-  for(let i=0;i<n;i++){ const pk=openPack(set).map(c=>cardObj(set,c)); tpacks.push(pk); pk.forEach(o=>{ tq.push(o); S.tcg.coll[o.id]=(S.tcg.coll[o.id]||0)+1;
-    if(RANK[o.r]>=6){ S.tcg.hits[o.r]=(S.tcg.hits[o.r]||0)+1; S.log.unshift({thumb:o.thumb,name:o.name,r:o.r,pack:set.name+" "+o.no,t:Date.now()}); } }); }
+  let raw=[]; for(let i=0;i<n;i++) raw.push(openPack(set));
+  // BOX 확정枠: 실제 박스는 상위 레어 1장이 보장됨 (일반: SR이상 / 하이클래스: SAR이상 / 샤이니: SSR이상)
+  if(n>=set.ppb){ const need=set.tpl==="hc"?7:6;
+    if(!raw.some(p=>p.some(c=>RANK[c[2]]>=need))){ const w=set.tpl==="hc"?{SAR:70,TOP:30}:set.tpl==="shiny"?{SSR:80,SAR:12,TOP:8}:{SR:78,SAR:17,TOP:5};
+      const m={}; for(const r in w){ const k=resolve(set,r); m[k]=(m[k]||0)+w[r]; }
+      const p=raw[Math.floor(Math.random()*raw.length)]; p[p.length-1]=drawSlot(set,m); } }
+  raw.forEach(pk0=>{ const pk=pk0.map(c=>cardObj(set,c)); tpacks.push(pk); pk.forEach(o=>{ tq.push(o); S.tcg.coll[o.id]=(S.tcg.coll[o.id]||0)+1;
+    if(RANK[o.r]>=6){ S.tcg.hits[o.r]=(S.tcg.hits[o.r]||0)+1; S.log.unshift({thumb:o.thumb,name:o.name,r:o.r,pack:set.name+" "+o.no,t:Date.now()}); } }); });
   S.log=S.log.slice(0,200); save(); renderWallet(); renderTcg();
   if(n===1){ tqi=0; showTcgCard(); } else { tpi=0; tpacks.forEach(p=>p.opened=false); showTcgPack(); }
 }
