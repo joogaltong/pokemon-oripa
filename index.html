@@ -374,7 +374,7 @@ function showCard(){
   $("#mhint").style.display="block"; $("#mnext").style.display="none";
   $("#mcard").innerHTML=cardHTML(c.id,rar);
   const card=$("#mcard .card");
-  card.onclick=()=>{ if(card.classList.contains("flipped"))return; card.classList.add("flipped");
+  card.onclick=()=>{ if(card.classList.contains("flipped")){ if($("#mnext").style.display!=="none")$("#mnext").click(); return; } card.classList.add("flipped");
     setTimeout(()=>{ $("#mres").textContent=`${RNAME[rar]}  ${NAMES[c.id-1]}  ${yen(c.pr)}`; $("#mres").className="res "+rar;
       if(rar==="SAR"){ $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on"); confetti(); }
       $("#mhint").style.display="none";
@@ -527,7 +527,7 @@ function showTcgPack(){
     <div class="packbtns"><button class="btn sec" id="pkall">모두 뒤집기</button><button class="btn" id="pknext">${tpi<tpacks.length-1?"다음 팩 ▶":"결과 보기"}</button>${tpi<tpacks.length-1?`<button class="btn sec" id="pksum">결과 보기</button>`:""}</div>`;
   pk.forEach(c=>{ const pre=new Image(); pre.src=c.big; });
   const cards=[...document.querySelectorAll("#mcard .tcgcard")];
-  const flip=el=>{ if(el.classList.contains("flipped"))return; el.classList.add("flipped"); const c=pk[+el.dataset.i]; const rk=RANK[c.r];
+  const flip=el=>{ if(el.classList.contains("flipped")){ if(pk.opened)$("#pknext").click(); return; } el.classList.add("flipped"); const c=pk[+el.dataset.i]; const rk=RANK[c.r];
     el.nextElementSibling.innerHTML=`<span class="chip ${c.r}" style="font-size:10px;padding:1px 6px">${c.r}</span> ${c.name}`;
     if(rk>=6){ $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on"); if(rk>=7)confetti(); }
     if(cards.every(x=>x.classList.contains("flipped"))){ pk.opened=true; const best=[...pk].sort((a,b)=>RANK[b.r]-RANK[a.r])[0];
@@ -545,7 +545,7 @@ function showTcgCard(){
   $("#mhint").style.display="block"; $("#mnext").style.display="none";
   $("#mcard").innerHTML=`<div class="tcgcard rk${rk}"><div class="stack"></div><div class="card-inner"><div class="face back"></div><div class="face front"><img src="${c.big}" alt="${c.name}"><div class="holo"></div></div></div></div>`;
   const card=$("#mcard .tcgcard");
-  card.onclick=()=>{ if(card.classList.contains("flipped"))return; card.classList.add("flipped");
+  card.onclick=()=>{ if(card.classList.contains("flipped")){ if($("#mnext").style.display!=="none")$("#mnext").click(); return; } card.classList.add("flipped");
     setTimeout(()=>{ const big=rk>=6; $("#mres").innerHTML=`<span class="chip ${c.r}" style="font-size:14px">${RLABEL[c.r]||c.r}</span> ${c.name} <span style="font-size:13px;color:var(--mut)">${c.no}/${tset.total}</span>`;
       $("#mres").className="res "+(rk>=7?"SAR":rk>=6?"SR":rk>=4?"AR":"");
       if(big){ $("#flash").classList.remove("on"); void $("#flash").offsetWidth; $("#flash").classList.add("on"); if(rk>=7)confetti(); }
