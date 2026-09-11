@@ -439,6 +439,9 @@ $("#reset").onclick=()=>{ if(confirm("코인·도감·기록을 모두 초기화
 
 // ===== 카드깡 (실제 일본판 카드) =====
 const SETS=window.CARD_SETS||{};
+const KO={M6:"스톰 에메랄다",M5:"어비스 아이",M4:"닌자 스피너",M3:"무니키스 제로",M2a:"MEGA 드림 ex",M2:"인페르노 X",M1L:"메가 브레이브",M1S:"메가 심포니아",
+  SV11B:"블랙 볼트",SV11W:"화이트 플레어",SV10:"로켓단의 영광",SV9:"배틀 파트너스",SV8a:"테라스탈 페스 ex",SV4a:"샤이니 트레저 ex",SV3:"흑염의 지배자",SV2a:"포켓몬카드 151",S12a:"VSTAR 유니버스"};
+Object.values(SETS).forEach(s=>{ s.jp=s.name; s.name=KO[s.id]||s.name; });
 const ASSET="https://assets.tcgdex.net/ja/";
 const LIM="https://limitlesstcg.nyc3.cdn.digitaloceanspaces.com/tpc/";
 // 이미지: 썸네일은 TCGdex(low.webp, 가벼움) 우선, 없으면 Limitless. 큰 이미지는 TCGdex high.webp 우선.
@@ -446,7 +449,7 @@ const limUrl=(sid,no,sz)=>`${LIM}${sid}/${sid}_${parseInt(no,10)}_R_JP_${sz}.png
 const thumbUrl=(sid,c)=>c[4]?ASSET+c[4]+"/low.webp":limUrl(sid,c[0],"XS");
 const bigUrl=(sid,c)=>c[4]?ASSET+c[4]+"/high.webp":limUrl(sid,c[0],"LG");
 const RANK={N:0,C:0,U:1,R:2,RR:3,RRR:3,ACE:3,K:4,AR:4,CHR:4,S:5,SSR:6,SR:6,CSR:6,SAR:7,UR:8,MUR:8,BWR:8};
-const RLABEL={N:"ノーマル",C:"C",U:"U",R:"R",RR:"RR",RRR:"RRR",ACE:"ACE",K:"かがやく",AR:"AR",CHR:"CHR",S:"S 色違い",SSR:"SSR",SR:"SR",CSR:"CSR",SAR:"SAR",UR:"UR",MUR:"MUR",BWR:"BWR"};
+const RLABEL={N:"노멀",C:"C",U:"U",R:"R",RR:"RR",RRR:"RRR",ACE:"ACE",K:"K 빛나는",AR:"AR",CHR:"CHR",S:"S 색이 다른",SSR:"SSR",SR:"SR",CSR:"CSR",SAR:"SAR",UR:"UR",MUR:"MUR",BWR:"BWR"};
 const FALL={MUR:"UR",BWR:"UR",UR:"SAR",SAR:"SR",CSR:"SR",SR:"AR",SSR:"S",S:"AR",CHR:"AR",K:"AR",AR:"RR",ACE:"RR",RRR:"RR",RR:"R",R:"U",U:"C",C:"N",N:"C"};
 // 팩 템플릿: 슬롯별 레어도 가중치 (%). 박스당 기대치는 UI에서 자동 계산.
 const TPL={
@@ -472,11 +475,11 @@ function curSet(){ const keys=Object.keys(SETS); if(!keys.length)return null; if
 function renderTcg(){
   const set=curSet();
   if(!set){ $("#sets").innerHTML=`<div class="note">cards.js를 찾을 수 없어요. index.html과 같은 폴더에 있어야 합니다.</div>`; return; }
-  $("#sets").innerHTML=Object.values(SETS).map(s=>`<button class="setb ${s.id===set.id?"on":""}" data-s="${s.id}"><b>${s.name}</b><small>${s.id} · ${s.date} · ${s.cpp}枚 ${yen(s.price)}</small></button>`).join("");
+  $("#sets").innerHTML=Object.values(SETS).map(s=>`<button class="setb ${s.id===set.id?"on":""}" data-s="${s.id}"><b>${s.name}</b><small>${s.jp}</small><br><small>${s.id} · ${s.date} · ${s.cpp}장 ${yen(s.price)}</small></button>`).join("");
   document.querySelectorAll(".setb").forEach(b=>b.onclick=()=>{S.tcg.sel=b.dataset.s;save();renderTcg();});
   const owned=Object.keys(S.tcg.coll).filter(k=>k.startsWith(set.id+"-")).length;
   $("#tcginfo").innerHTML=`<div class="pk">${set.name}</div>
-    <div><h3>${set.name} <span style="font-size:12px;color:var(--mut)">${set.id}</span></h3>
+    <div><h3>${set.name} <span style="font-size:12px;color:var(--mut)">${set.jp} · ${set.id}</span></h3>
       <div class="d">발매 ${set.date} · 전 ${set.total}종 · 1팩 ${set.cpp}장 ${yen(set.price)} · 1BOX ${set.ppb}팩 ${yen(set.price*set.ppb)}</div>
       <div class="d">이 세트 수집 <b style="color:var(--acc)">${owned} / ${set.total}</b></div></div>
     <div class="actions"><button class="btn" id="op1">1팩 개봉 (${yen(set.price)})</button><button class="btn sec" id="op10">${set.ppb}팩 = 1BOX (${yen(set.price*set.ppb)})</button></div>`;
